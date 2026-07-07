@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
 #---------------Page Config------------------
 st.set_page_config(
     page_title="Netflix Analytics Dashboard",
@@ -193,18 +194,22 @@ filtered = netflix[
 ]
 #-------------------KPI-----------------------
 col1, col2, col3, col4 = st.columns(4)
+
 col1.metric(
     "Total Titles",
     len(filtered)
 )
+
 col2.metric(
     "Movies",
     (filtered["type"]=="Movie").sum()
 )
+
 col3.metric(
     "TV Shows",
     (filtered["type"]=="TV Show").sum()
 )
+
 col4.metric(
     "Countries",
     filtered["country"].nunique()

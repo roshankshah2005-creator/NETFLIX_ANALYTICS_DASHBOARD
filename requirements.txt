@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 altair==6.2.2
 anyio==4.14.1
 argon2-cffi==25.1.0
@@ -125,3 +126,12 @@ webencodings==0.5.1
 websocket-client==1.9.0
 websockets==16.0
 widgetsnbextension==4.0.15
+=======
+streamlit
+pandas
+numpy
+matplotlib
+plotly
+seaborn
+Pillow
+>>>>>>> f62058c8f093452e418a433d156ef31f3600a358
