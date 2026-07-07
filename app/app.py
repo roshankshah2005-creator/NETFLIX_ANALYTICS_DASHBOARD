@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-#---------------Page Config------------------
+#---------------Page Config (MUST BE FIRST)------------------
 st.set_page_config(
     page_title="Netflix Analytics Dashboard",
     page_icon="🎬",
@@ -13,12 +13,12 @@ st.set_page_config(
 #---------------Title-------------------
 st.title("🎬 Netflix Analytics Dashboard")
 
-#--------------Background (CSS)---------------------
+#--------------Background (CSS Layout Engine)---------------------
 st.markdown("""
 <style>
 
 /* Google Font */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght=300;400;500;600;700&display=swap');
 
 /* Main Background */
 .stApp{
@@ -109,7 +109,7 @@ hr{
     background:#1a1a1a;
 }
 
-/* Hide Streamlit Menu */
+/* Hide Streamlit Default UI branding elements */
 #MainMenu{
     visibility:hidden;
 }
@@ -135,18 +135,15 @@ exploring core trends by country, genre, rating, and release timeline.
 """
 )
 
-#-------------------Dataset--------------------
+#-------------------Dataset Loader (Structure A Optimized)--------------------
 @st.cache_data
 def load_data():
+    # Pinpoints file path by stepping out of 'app' directory into 'data' directory
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(current_dir, "..", "data", "netflix_titles_updated.csv")
-    
-    if not os.path.exists(file_path):
-        file_path = os.path.join(current_dir, "data", "netflix_titles_updated.csv")
-        
+    file_path = os.path.abspath(os.path.join(current_dir, "..", "data", "netflix_titles_updated.csv"))
     return pd.read_csv(file_path)
 
-# Directing global layout variables straightforwardly into the source dataset
+# Extracting data uniformly across elements
 filtered = load_data()
 
 st.markdown("---")
