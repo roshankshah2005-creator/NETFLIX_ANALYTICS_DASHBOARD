@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-#---------------Page Config (MUST BE FIRST)------------------
+#---------------Page Config------------------
 st.set_page_config(
     page_title="Netflix Analytics Dashboard",
     page_icon="🎬",
@@ -12,12 +12,6 @@ st.set_page_config(
 
 #---------------Title-------------------
 st.title("🎬 Netflix Analytics Dashboard")
-
-st.markdown(
-"""
-Explore Netflix Movies and TV Shows using interactive filters.
-"""
-)
 
 #--------------Background (CSS)---------------------
 st.markdown("""
@@ -38,12 +32,6 @@ st.markdown("""
 .block-container{
     padding-top:2rem;
     padding-bottom:2rem;
-}
-
-/* Sidebar */
-[data-testid="stSidebar"]{
-    background: linear-gradient(180deg,#141E30,#243B55);
-    border-right:1px solid rgba(255,255,255,0.15);
 }
 
 /* Metric Cards */
@@ -92,17 +80,6 @@ st.markdown("""
     border-radius:10px;
 }
 
-/* Slider */
-.stSlider{
-    padding-top:10px;
-}
-
-/* Select Boxes */
-.stMultiSelect, .stSelectbox{
-    background:rgba(255,255,255,0.04);
-    border-radius:10px;
-}
-
 /* Headings */
 h1{
     color:#E50914;
@@ -148,91 +125,39 @@ header{
 </style>
 """, unsafe_allow_html=True)
 
-#--------------Image--------------------------
-# Double check your "images" folder is uploaded to GitHub as well!
+#--------------Image & Description------------
 st.image("images/N.webp", width=200)
 
-#-------------Description-------------------
 st.markdown(
 """
-This dashboard provides insights into Netflix's global catalog,
-including trends by country, genre, rating, and release year.
+This dashboard provides global insights into the complete Netflix catalog,
+exploring core trends by country, genre, rating, and release timeline.
 """
 )
 
 #-------------------Dataset--------------------
 @st.cache_data
 def load_data():
-    # Bulletproof relative path finding logic
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Looks for data folder relative to app.py
     file_path = os.path.join(current_dir, "..", "data", "netflix_titles_updated.csv")
     
-    # Fallback to absolute repository path structure if Streamlit mounts from root
     if not os.path.exists(file_path):
         file_path = os.path.join(current_dir, "data", "netflix_titles_updated.csv")
         
     return pd.read_csv(file_path)
 
-netflix = load_data()
+# Directing global layout variables straightforwardly into the source dataset
+filtered = load_data()
 
-#------------------Sidebars--------------------
-st.sidebar.header("Filters")
-content_type = st.sidebar.multiselect(
-    "Select Content Type",
-    options=sorted(netflix["type"].dropna().unique()),
-    default=sorted(netflix["type"].dropna().unique())
-)
-country = st.sidebar.multiselect(
-    "Select Country",
-    options=sorted(netflix["country"].dropna().unique()),
-    default=sorted(netflix["country"].dropna().unique())
-)
-rating = st.sidebar.multiselect(
-    "Select Rating",
-    options=sorted(netflix["rating"].dropna().unique()),
-    default=sorted(netflix["rating"].dropna().unique())
-)
-years = sorted(netflix["release_year"].unique())
+st.markdown("---")
 
-year_range = st.sidebar.slider(
-    "Release Year",
-    min_value=min(years),
-    max_value=max(years),
-    value=(min(years), max(years))
-)
-
-#-------------------Filters-------------------
-filtered = netflix[
-    (netflix["type"].isin(content_type)) &
-    (netflix["country"].isin(country)) &
-    (netflix["rating"].isin(rating)) &
-    (netflix["release_year"].between(year_range[0], year_range[1]))
-]
-
-#-------------------KPI-----------------------
+#-------------------KPI Matrix-----------------------
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric(
-    "Total Titles",
-    len(filtered)
-)
-
-col2.metric(
-    "Movies",
-    (filtered["type"]=="Movie").sum()
-)
-
-col3.metric(
-    "TV Shows",
-    (filtered["type"]=="TV Show").sum()
-)
-
-col4.metric(
-    "Countries",
-    filtered["country"].nunique()
-)
+col1.metric("Total Titles", len(filtered))
+col2.metric("Movies", (filtered["type"]=="Movie").sum())
+col3.metric("TV Shows", (filtered["type"]=="TV Show").sum())
+col4.metric("Countries", filtered["country"].nunique())
 
 #----------------Movies vs Tv shows------------------
 st.subheader("Movies vs TV Shows")
@@ -295,9 +220,9 @@ with st.expander("View Raw Data"):
 csv = filtered.to_csv(index=False)
 
 st.download_button(
-    "Download Filtered Data",
+    "Download Dataset",
     csv,
-    "filtered_netflix.csv",
+    "netflix_catalog.csv",
     "text/csv"
 )
 
