@@ -136,7 +136,7 @@ header{
 </style>
 """, unsafe_allow_html=True)
 #--------------Image--------------------------
-st.image("images/N.webp", width=200)
+st.image(BASE_DIR / "images" / "N.webp", width=200)
 #-------------Description-------------------
 st.markdown(
 """
@@ -152,10 +152,13 @@ Explore Netflix Movies and TV Shows using interactive filters.
 """
 )
 #-------------------Dataset--------------------
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 @st.cache_data
 def load_data():
-    return pd.read_csv("C:/Users/ROSHAN/Netflix-Analytics-Dashboard/data/netflix_titles_updated.csv")
-netflix = load_data()
+    return pd.read_csv(BASE_DIR / "data" / "netflix_titles_updated.csv")
 #------------------Sidebars--------------------
 st.sidebar.header("Filters")
 content_type = st.sidebar.multiselect(
