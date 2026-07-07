@@ -1,6 +1,15 @@
+import os
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+
+#---------------Page Config (MUST BE FIRST)------------------
+st.set_page_config(
+    page_title="Netflix Analytics Dashboard",
+    page_icon="🎬",
+    layout="wide"
+)
+
 #---------------Title-------------------
 st.title("🎬 Netflix Analytics Dashboard")
 
@@ -9,13 +18,8 @@ st.markdown(
 Explore Netflix Movies and TV Shows using interactive filters.
 """
 )
-#---------------Page Config------------------
-st.set_page_config(
-    page_title="Netflix Analytics Dashboard",
-    page_icon="🎬",
-    layout="wide"
-)
-#--------------Background---------------------
+
+#--------------Background (CSS)---------------------
 st.markdown("""
 <style>
 
@@ -143,8 +147,11 @@ header{
 
 </style>
 """, unsafe_allow_html=True)
+
 #--------------Image--------------------------
+# Double check your "images" folder is uploaded to GitHub as well!
 st.image("images/N.webp", width=200)
+
 #-------------Description-------------------
 st.markdown(
 """
@@ -152,12 +159,24 @@ This dashboard provides insights into Netflix's global catalog,
 including trends by country, genre, rating, and release year.
 """
 )
+
 #-------------------Dataset--------------------
 @st.cache_data
 def load_data():
-    return pd.read_csv("C:/Users/ROSHAN/Netflix-Analytics-Dashboard/data/netflix_titles_updated.csv")
+    # Bulletproof relative path finding logic
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Looks for data folder relative to app.py
+    file_path = os.path.join(current_dir, "..", "data", "netflix_titles_updated.csv")
+    
+    # Fallback to absolute repository path structure if Streamlit mounts from root
+    if not os.path.exists(file_path):
+        file_path = os.path.join(current_dir, "data", "netflix_titles_updated.csv")
+        
+    return pd.read_csv(file_path)
 
 netflix = load_data()
+
 #------------------Sidebars--------------------
 st.sidebar.header("Filters")
 content_type = st.sidebar.multiselect(
@@ -183,6 +202,7 @@ year_range = st.sidebar.slider(
     max_value=max(years),
     value=(min(years), max(years))
 )
+
 #-------------------Filters-------------------
 filtered = netflix[
     (netflix["type"].isin(content_type)) &
@@ -190,6 +210,7 @@ filtered = netflix[
     (netflix["rating"].isin(rating)) &
     (netflix["release_year"].between(year_range[0], year_range[1]))
 ]
+
 #-------------------KPI-----------------------
 col1, col2, col3, col4 = st.columns(4)
 
@@ -212,6 +233,7 @@ col4.metric(
     "Countries",
     filtered["country"].nunique()
 )
+
 #----------------Movies vs Tv shows------------------
 st.subheader("Movies vs TV Shows")
 type_counts = filtered["type"].value_counts()
@@ -223,6 +245,7 @@ ax.pie(
     startangle=90
 )
 st.pyplot(fig)
+
 #--------------------Top Genres--------------------------
 genre = filtered.copy()
 genre["listed_in"] = genre["listed_in"].str.split(",")
@@ -236,6 +259,7 @@ ax.barh(
     top_genres.values
 )
 st.pyplot(fig)
+
 #---------------Content Added Over Time------------------
 st.subheader("Content Added Over Time")
 trend = filtered["year_added"].value_counts().sort_index()
@@ -248,6 +272,7 @@ ax.plot(
 ax.set_xlabel("Year")
 ax.set_ylabel("Titles")
 st.pyplot(fig)
+
 #-----------------Top Ratings-------------------------------
 st.subheader("Ratings")
 rating_count = filtered["rating"].value_counts()
@@ -258,11 +283,10 @@ ax.bar(
 )
 plt.xticks(rotation=45)
 st.pyplot(fig)
+
 #------------------Show Data-------------------------------
 st.subheader("Dataset")
 st.dataframe(filtered)
-
-
 
 with st.expander("View Raw Data"):
     st.dataframe(filtered)
@@ -276,9 +300,9 @@ st.download_button(
     "filtered_netflix.csv",
     "text/csv"
 )
+
 #----------------Footer--------------------------
 st.markdown("---")
 st.markdown(
-"Created by **Roshan** using Python,Jupyter,Pandas,Matplotlib,and Streamlit."
+"Created by **Roshan** using Python, Jupyter, Pandas, Matplotlib, and Streamlit."
 )
-
