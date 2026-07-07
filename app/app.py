@@ -1,6 +1,14 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+#---------------Title-------------------
+st.title("🎬 Netflix Analytics Dashboard")
+
+st.markdown(
+"""
+Explore Netflix Movies and TV Shows using interactive filters.
+"""
+)
 #---------------Page Config------------------
 st.set_page_config(
     page_title="Netflix Analytics Dashboard",
@@ -136,7 +144,7 @@ header{
 </style>
 """, unsafe_allow_html=True)
 #--------------Image--------------------------
-st.image(BASE_DIR / "images" / "N.webp", width=200)
+st.image("images/N.webp", width=200)
 #-------------Description-------------------
 st.markdown(
 """
@@ -144,21 +152,12 @@ This dashboard provides insights into Netflix's global catalog,
 including trends by country, genre, rating, and release year.
 """
 )
-#--------------------Title--------------------
-st.title("🎬 Netflix Analytics Dashboard")
-st.markdown(
-"""
-Explore Netflix Movies and TV Shows using interactive filters.
-"""
-)
 #-------------------Dataset--------------------
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
 @st.cache_data
 def load_data():
-    return pd.read_csv(BASE_DIR / "data" / "netflix_titles_updated.csv")
+    return pd.read_csv("C:/Users/ROSHAN/Netflix-Analytics-Dashboard/data/netflix_titles_updated.csv")
+
+netflix = load_data()
 #------------------Sidebars--------------------
 st.sidebar.header("Filters")
 content_type = st.sidebar.multiselect(
