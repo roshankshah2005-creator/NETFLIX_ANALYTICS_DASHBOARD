@@ -1,19 +1,16 @@
 import os
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import altair as alt
 
-#---------------Page Config (MUST BE FIRST)------------------
+# ---------------Page Config (MUST BE FIRST)------------------
 st.set_page_config(
     page_title="Netflix Analytics Dashboard",
     page_icon="🎬",
     layout="wide"
 )
 
-#---------------Title-------------------
-st.title("🎬 Netflix Analytics Dashboard")
-
-#--------------Background (CSS Layout Engine)---------------------
+# --------------Background (CSS Layout Engine)---------------------
 st.markdown("""
 <style>
 
@@ -125,106 +122,194 @@ header{
 </style>
 """, unsafe_allow_html=True)
 
-#--------------Image & Description------------
-st.image("images/N.webp", width=200)
-
-st.markdown(
-"""
-This dashboard provides global insights into the complete Netflix catalog,
-exploring core trends by country, genre, rating, and release timeline.
-"""
-)
-
-#-------------------Dataset Loader (Structure A Optimized)--------------------
+#-------------------Dataset Loader--------------------
 @st.cache_data
 def load_data():
-    # Pinpoints file path by stepping out of 'app' directory into 'data' directory
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.abspath(os.path.join(current_dir, "..", "data", "netflix_titles_updated.csv"))
-    return pd.read_csv(file_path)
+    file_path = os.path.abspath(os.path.join(current_dir, "..", "data", "netflix_cleaned.csv"))
+    
+    if not os.path.exists(file_path):
+        file_path = os.path.abspath(os.path.join(current_dir, "..", "data", "netflix_titles_updated.csv"))
+        
+    df = pd.read_csv(file_path)
+    df["country"] = df["country"].fillna("Unknown")
+    df["rating"] = df["rating"].fillna("UR")
+    return df
 
-# Extracting data uniformly across elements
-filtered = load_data()
+raw_data = load_data()
+filtered = raw_data.copy()
 
+#--------------Sidebar Controls & Search------------
+try:
+    st.sidebar.image("images/netflix_logo.png", width=180)
+except Exception:
+    try:
+        st.sidebar.image("images/N.webp", width=100)
+    except Exception:
+        st.sidebar.title("🍿 Netflix")
+
+st.sidebar.title("Netflix Dashboard")
+st.sidebar.markdown("Use the filters below to explore the Netflix catalog.")
+
+# Text Filtering Engine
+search = st.sidebar.text_input("Search Title", placeholder="e.g. Stranger Things")
+if search:
+    filtered = filtered[filtered["title"].str.contains(search, case=False, na=False)]
+
+# Content Categorization Filter
+content_choices = st.sidebar.multiselect("Select Content Type", options=raw_data["type"].unique(), default=raw_data["type"].unique())
+filtered = filtered[filtered["type"].isin(content_choices)]
+
+#------------------Tab System Organization-------------------
+tab1, tab2, tab3 = st.tabs(["📊 Dashboard", "📋 Dataset Explorer", "ℹ️ About"])
+
+with tab1:
+    st.title("🎬 Netflix Analytics Dashboard")
+    st.markdown("This dashboard provides global insights into the complete Netflix catalog, exploring core trends by country, genre, rating, and release timeline.")
+    st.markdown("---")
+
+    #-------------------Expanded 6 KPI Matrix-----------------------
+    kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
+    
+    kpi1.metric("Total Titles", f"{len(filtered):,}")
+    kpi2.metric("Movies", f"{(filtered['type'] == 'Movie').sum():,}")
+    kpi3.metric("TV Shows", f"{(filtered['type'] == 'TV Show').sum():,}")
+    kpi4.metric("Countries", f"{filtered['country'].nunique():,}")
+    
+    oldest_release = int(filtered["release_year"].min()) if not filtered.empty else "N/A"
+    latest_release = int(filtered["release_year"].max()) if not filtered.empty else "N/A"
+    
+    kpi5.metric("Oldest Release", oldest_release)
+    kpi6.metric("Latest Release", latest_release)
+    st.markdown("---")
+
+    #----------------Two-Column Altair Chart Grid------------------
+    left, right = st.columns(2)
+    
+    with left:
+        st.subheader("Movies vs TV Shows")
+        if not filtered.empty:
+            type_counts = filtered["type"].value_counts().reset_index()
+            type_counts.columns = ["Type", "Count"]
+            
+            # Altair Donut Chart
+            chart1 = alt.Chart(type_counts).mark_arc(innerRadius=50).encode(
+                theta=alt.Theta(field="Count", type="quantitative"),
+                color=alt.Color(field="Type", type="nominal", scale=alt.Scale(domain=['Movie', 'TV Show'], range=['#E50914', '#262730'])),
+                tooltip=["Type", "Count"]
+            ).properties(height=300)
+            st.altair_chart(chart1, use_container_width=True)
+        else:
+            st.warning("No data matches chosen query.")
+
+    with right:
+        st.subheader("Top 10 Genres")
+        if not filtered.empty:
+            genre_df = filtered.copy()
+            genre_df["listed_in"] = genre_df["listed_in"].str.split(",")
+            genre_df = genre_df.explode("listed_in")
+            genre_df["listed_in"] = genre_df["listed_in"].str.strip()
+            top_genres = genre_df["listed_in"].value_counts().head(10).reset_index()
+            top_genres.columns = ["Genre", "Count"]
+            
+            # Altair Horizontal Bar Chart
+            chart2 = alt.Chart(top_genres).mark_bar(color="#E50914").encode(
+                x=alt.X("Count:Q", title="Total Titles"),
+                y=alt.Y("Genre:N", sort="-x", title="Genre"),
+                tooltip=["Genre", "Count"]
+            ).properties(height=300)
+            st.altair_chart(chart2, use_container_width=True)
+        else:
+            st.warning("No data matches chosen query.")
+
+    st.markdown("---")
+    
+    left_trend, right_rating = st.columns(2)
+    
+    with left_trend:
+        st.subheader("Content Added Over Time")
+        if not filtered.empty and "year_added" in filtered.columns:
+            trend = filtered["year_added"].dropna().value_counts().sort_index().reset_index()
+            trend.columns = ["Year", "Titles"]
+            
+            # Altair Line Chart with points
+            chart3 = alt.Chart(trend).mark_line(color="#E50914", point=True).encode(
+                x=alt.X("Year:O", title="Year"),
+                y=alt.Y("Titles:Q", title="Titles Added"),
+                tooltip=["Year", "Titles"]
+            ).properties(height=300)
+            st.altair_chart(chart3, use_container_width=True)
+        else:
+            st.warning("Timeline tracking features unavailable for selection.")
+
+    with right_rating:
+        st.subheader("Content Distribution by Rating")
+        if not filtered.empty:
+            rating_count = filtered["rating"].value_counts().head(10).reset_index()
+            rating_count.columns = ["Rating", "Count"]
+            
+            # Altair Vertical Bar Chart
+            chart4 = alt.Chart(rating_count).mark_bar(color="#262730").encode(
+                x=alt.X("Rating:N", sort="-y", title="Age Rating"),
+                y=alt.Y("Count:Q", title="Titles Count"),
+                tooltip=["Rating", "Count"]
+            ).properties(height=300)
+            st.altair_chart(chart4, use_container_width=True)
+        else:
+            st.warning("No rating indices match criteria filters.")
+
+    st.markdown("---")
+
+    #-----------------Top Countries Distribution---------------------
+    st.subheader("🗺️ Content Distribution Across Top Production Countries")
+    if not filtered.empty:
+        country = filtered.copy()
+        country["country"] = country["country"].str.split(",")
+        country = country.explode("country")
+        country["country"] = country["country"].str.strip()
+        
+        country_count = country["country"].value_counts().reset_index()
+        country_count.columns = ["Country", "Titles"]
+        country_count = country_count[country_count["Country"] != "Unknown"].head(15)
+
+        # Altair Vertical Bar Chart for Top Countries
+        chart_countries = alt.Chart(country_count).mark_bar(color="#E50914").encode(
+            x=alt.X("Country:N", sort="-y", title="Country"),
+            y=alt.Y("Titles:Q", title="Total Catalog Size"),
+            tooltip=["Country", "Titles"]
+        ).properties(height=350)
+        st.altair_chart(chart_countries, use_container_width=True)
+    else:
+        st.warning("No geographical matrix distributions available.")
+
+with tab2:
+    st.title("📋 Interactive Dataset Matrix")
+    st.markdown("Search, slice, and verify dataset parameters on-demand below.")
+    st.dataframe(filtered, use_container_width=True)
+    
+    # -------------Download Section Included inside Data View---------------------
+    st.markdown("### Export Segment Records")
+    csv = filtered.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Download Active Dataset Selection",
+        data=csv,
+        file_name="netflix_catalog_filtered.csv",
+        mime="text/csv"
+    )
+
+with tab3:
+    st.title("ℹ️ About This Analytics Architecture")
+    st.write("""
+    ### Netflix Portfolio Engine
+    Designed as an enterprise-grade workspace view capturing programmatic metrics evaluating international content distribution, ratings, and media tracking timelines.
+    
+    Built using:
+    * **Python**
+    * **Pandas Dataframes**
+    * **Altair Visualization Engine**
+    * **Streamlit Deployment Framework**
+    """)
+
+#----------------Project Footer--------------------------
 st.markdown("---")
-
-#-------------------KPI Matrix-----------------------
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric("Total Titles", len(filtered))
-col2.metric("Movies", (filtered["type"]=="Movie").sum())
-col3.metric("TV Shows", (filtered["type"]=="TV Show").sum())
-col4.metric("Countries", filtered["country"].nunique())
-
-#----------------Movies vs Tv shows------------------
-st.subheader("Movies vs TV Shows")
-type_counts = filtered["type"].value_counts()
-fig, ax = plt.subplots(figsize=(5,5))
-ax.pie(
-    type_counts,
-    labels=type_counts.index,
-    autopct="%1.1f%%",
-    startangle=90
-)
-st.pyplot(fig)
-
-#--------------------Top Genres--------------------------
-genre = filtered.copy()
-genre["listed_in"] = genre["listed_in"].str.split(",")
-genre = genre.explode("listed_in")
-genre["listed_in"] = genre["listed_in"].str.strip()
-top_genres = genre["listed_in"].value_counts().head(10)
-st.subheader("Top Genres")
-fig, ax = plt.subplots(figsize=(8,5))
-ax.barh(
-    top_genres.index,
-    top_genres.values
-)
-st.pyplot(fig)
-
-#---------------Content Added Over Time------------------
-st.subheader("Content Added Over Time")
-trend = filtered["year_added"].value_counts().sort_index()
-fig, ax = plt.subplots(figsize=(10,5))
-ax.plot(
-    trend.index,
-    trend.values,
-    marker="o"
-)
-ax.set_xlabel("Year")
-ax.set_ylabel("Titles")
-st.pyplot(fig)
-
-#-----------------Top Ratings-------------------------------
-st.subheader("Ratings")
-rating_count = filtered["rating"].value_counts()
-fig, ax = plt.subplots(figsize=(8,5))
-ax.bar(
-    rating_count.index,
-    rating_count.values
-)
-plt.xticks(rotation=45)
-st.pyplot(fig)
-
-#------------------Show Data-------------------------------
-st.subheader("Dataset")
-st.dataframe(filtered)
-
-with st.expander("View Raw Data"):
-    st.dataframe(filtered)
-
-#-------------Download Button---------------------
-csv = filtered.to_csv(index=False)
-
-st.download_button(
-    "Download Dataset",
-    csv,
-    "netflix_catalog.csv",
-    "text/csv"
-)
-
-#----------------Footer--------------------------
-st.markdown("---")
-st.markdown(
-"Created by **Roshan** using Python, Jupyter, Pandas, Matplotlib, and Streamlit."
-)
+st.caption("Created by **Roshan** | Data Science Portfolio Project 🚀")
