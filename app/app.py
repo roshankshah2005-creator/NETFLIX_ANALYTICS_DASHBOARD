@@ -177,8 +177,6 @@ def load_data():
     df["country"] = df["country"].fillna("Unknown")
     df["rating"] = df["rating"].fillna("UR")
     return df
->>>>>>> b01c9b91f5adcb89cc202a145af83d9b7a626a08
-
 raw_data = load_data()
 filtered = raw_data.copy()
 
