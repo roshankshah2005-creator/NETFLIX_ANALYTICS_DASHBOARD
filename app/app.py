@@ -11,11 +11,9 @@ Explore Netflix Movies and TV Shows using interactive filters.
 """
 )
 #---------------Page Config------------------
-=======
 import altair as alt
 
 # ---------------Page Config (MUST BE FIRST)------------------
->>>>>>> b01c9b91f5adcb89cc202a145af83d9b7a626a08
 st.set_page_config(
     page_title="Netflix Analytics Dashboard",
     page_icon="🎬",
