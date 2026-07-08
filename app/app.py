@@ -1,16 +1,6 @@
 import os
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-#---------------Title-------------------
-st.title("🎬 Netflix Analytics Dashboard")
-
-st.markdown(
-"""
-Explore Netflix Movies and TV Shows using interactive filters.
-"""
-)
-#---------------Page Config------------------
 import altair as alt
 
 # ---------------Page Config (MUST BE FIRST)------------------
@@ -131,56 +121,27 @@ header{
 
 </style>
 """, unsafe_allow_html=True)
-#--------------Image--------------------------
-st.image("images/N.webp", width=200)
-#-------------Description-------------------
-st.markdown(
-"""
-This dashboard provides insights into Netflix's global catalog,
-including trends by country, genre, rating, and release year.
-"""
-)
-#-------------------Dataset--------------------
-@st.cache_data
-def load_data():
-    return pd.read_csv("C:/Users/ROSHAN/Netflix-Analytics-Dashboard/data/netflix_titles_updated.csv")
 
-netflix = load_data()
-#------------------Sidebars--------------------
-st.sidebar.header("Filters")
-content_type = st.sidebar.multiselect(
-    "Select Content Type",
-    options=sorted(netflix["type"].dropna().unique()),
-    default=sorted(netflix["type"].dropna().unique())
-)
-country = st.sidebar.multiselect(
-    "Select Country",
-    options=sorted(netflix["country"].dropna().unique()),
-    default=sorted(netflix["country"].dropna().unique())
-)
-rating = st.sidebar.multiselect(
-    "Select Rating",
-    options=sorted(netflix["rating"].dropna().unique()),
-    default=sorted(netflix["rating"].dropna().unique())
-)
-years = sorted(netflix["release_year"].unique())
-#-------------------Dataset Loader--------------------
+#-------------------Dataset Loader (Fixed Relative Paths)--------------------
 @st.cache_data
 def load_data():
+    # Pinpoints file path dynamically by checking the script's real execution path
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.abspath(os.path.join(current_dir, "..", "data", "netflix_cleaned.csv"))
+    file_path = os.path.abspath(os.path.join(current_dir, "..", "data", "netflix_titles_updated.csv"))
     
+    # Cloud Failback route verification check
     if not os.path.exists(file_path):
-        file_path = os.path.abspath(os.path.join(current_dir, "..", "data", "netflix_titles_updated.csv"))
+        file_path = os.path.abspath(os.path.join(current_dir, "..", "data", "netflix_cleaned.csv"))
         
     df = pd.read_csv(file_path)
     df["country"] = df["country"].fillna("Unknown")
     df["rating"] = df["rating"].fillna("UR")
     return df
+
 raw_data = load_data()
 filtered = raw_data.copy()
 
-#--------------Sidebar Controls & Search------------
+#--------------Sidebar Management & Search Engine Filters------------
 try:
     st.sidebar.image("images/netflix_logo.png", width=180)
 except Exception:
@@ -192,16 +153,16 @@ except Exception:
 st.sidebar.title("Netflix Dashboard")
 st.sidebar.markdown("Use the filters below to explore the Netflix catalog.")
 
-# Text Filtering Engine
+# Text Title Filter Input
 search = st.sidebar.text_input("Search Title", placeholder="e.g. Stranger Things")
 if search:
     filtered = filtered[filtered["title"].str.contains(search, case=False, na=False)]
 
-# Content Categorization Filter
+# Content Categorization Selection Dropdown
 content_choices = st.sidebar.multiselect("Select Content Type", options=raw_data["type"].unique(), default=raw_data["type"].unique())
 filtered = filtered[filtered["type"].isin(content_choices)]
 
-#------------------Tab System Organization-------------------
+#------------------Tab Layout Grid Navigation System-------------------
 tab1, tab2, tab3 = st.tabs(["📊 Dashboard", "📋 Dataset Explorer", "ℹ️ About"])
 
 with tab1:
@@ -209,7 +170,7 @@ with tab1:
     st.markdown("This dashboard provides global insights into the complete Netflix catalog, exploring core trends by country, genre, rating, and release timeline.")
     st.markdown("---")
 
-    #-------------------Expanded 6 KPI Matrix-----------------------
+    #-------------------Expanded 6 Metric Card KPI Matrix-----------------------
     kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
     
     kpi1.metric("Total Titles", f"{len(filtered):,}")
@@ -224,7 +185,7 @@ with tab1:
     kpi6.metric("Latest Release", latest_release)
     st.markdown("---")
 
-    #----------------Two-Column Altair Chart Grid------------------
+    #----------------Two-Column Layout: Donut vs Horizontal Bars------------------
     left, right = st.columns(2)
     
     with left:
@@ -233,7 +194,6 @@ with tab1:
             type_counts = filtered["type"].value_counts().reset_index()
             type_counts.columns = ["Type", "Count"]
             
-            # Altair Donut Chart
             chart1 = alt.Chart(type_counts).mark_arc(innerRadius=50).encode(
                 theta=alt.Theta(field="Count", type="quantitative"),
                 color=alt.Color(field="Type", type="nominal", scale=alt.Scale(domain=['Movie', 'TV Show'], range=['#E50914', '#262730'])),
@@ -241,7 +201,7 @@ with tab1:
             ).properties(height=300)
             st.altair_chart(chart1, use_container_width=True)
         else:
-            st.warning("No data matches chosen query.")
+            st.warning("No records match your query layout filters.")
 
     with right:
         st.subheader("Top 10 Genres")
@@ -253,7 +213,6 @@ with tab1:
             top_genres = genre_df["listed_in"].value_counts().head(10).reset_index()
             top_genres.columns = ["Genre", "Count"]
             
-            # Altair Horizontal Bar Chart
             chart2 = alt.Chart(top_genres).mark_bar(color="#E50914").encode(
                 x=alt.X("Count:Q", title="Total Titles"),
                 y=alt.Y("Genre:N", sort="-x", title="Genre"),
@@ -261,10 +220,11 @@ with tab1:
             ).properties(height=300)
             st.altair_chart(chart2, use_container_width=True)
         else:
-            st.warning("No data matches chosen query.")
+            st.warning("No records match your query layout filters.")
 
     st.markdown("---")
     
+    #----------------Two-Column Layout: Line vs Vertical Bars------------------
     left_trend, right_rating = st.columns(2)
     
     with left_trend:
@@ -273,7 +233,6 @@ with tab1:
             trend = filtered["year_added"].dropna().value_counts().sort_index().reset_index()
             trend.columns = ["Year", "Titles"]
             
-            # Altair Line Chart with points
             chart3 = alt.Chart(trend).mark_line(color="#E50914", point=True).encode(
                 x=alt.X("Year:O", title="Year"),
                 y=alt.Y("Titles:Q", title="Titles Added"),
@@ -281,7 +240,7 @@ with tab1:
             ).properties(height=300)
             st.altair_chart(chart3, use_container_width=True)
         else:
-            st.warning("Timeline tracking features unavailable for selection.")
+            st.warning("Timeline metadata metric filters are unavailable.")
 
     with right_rating:
         st.subheader("Content Distribution by Rating")
@@ -289,7 +248,6 @@ with tab1:
             rating_count = filtered["rating"].value_counts().head(10).reset_index()
             rating_count.columns = ["Rating", "Count"]
             
-            # Altair Vertical Bar Chart
             chart4 = alt.Chart(rating_count).mark_bar(color="#262730").encode(
                 x=alt.X("Rating:N", sort="-y", title="Age Rating"),
                 y=alt.Y("Count:Q", title="Titles Count"),
@@ -297,11 +255,11 @@ with tab1:
             ).properties(height=300)
             st.altair_chart(chart4, use_container_width=True)
         else:
-            st.warning("No rating indices match criteria filters.")
+            st.warning("No structural rating counts match selections.")
 
     st.markdown("---")
 
-    #-----------------Top Countries Distribution---------------------
+    #-----------------Top Countries Distribution Layer---------------------
     st.subheader("🗺️ Content Distribution Across Top Production Countries")
     if not filtered.empty:
         country = filtered.copy()
@@ -313,7 +271,6 @@ with tab1:
         country_count.columns = ["Country", "Titles"]
         country_count = country_count[country_count["Country"] != "Unknown"].head(15)
 
-        # Altair Vertical Bar Chart for Top Countries
         chart_countries = alt.Chart(country_count).mark_bar(color="#E50914").encode(
             x=alt.X("Country:N", sort="-y", title="Country"),
             y=alt.Y("Titles:Q", title="Total Catalog Size"),
@@ -321,10 +278,10 @@ with tab1:
         ).properties(height=350)
         st.altair_chart(chart_countries, use_container_width=True)
     else:
-        st.warning("No geographical matrix distributions available.")
+        st.warning("No geographic dataset properties found.")
 
 with tab2:
-    st.title("📋 Interactive Dataset Matrix")
+    st.title("📋 Interactive Dataset Explorer")
     st.markdown("Search, slice, and verify dataset parameters on-demand below.")
     st.dataframe(filtered, use_container_width=True)
     
@@ -347,10 +304,10 @@ with tab3:
     Built using:
     * **Python**
     * **Pandas Dataframes**
-    * **Altair Visualization Engine**
-    * **Streamlit Deployment Framework**
+    * **Altair Native Rendering Engine**
+    * **Streamlit Web Framework**
     """)
 
-#----------------Project Footer--------------------------
+#----------------Project Footer Layout--------------------------
 st.markdown("---")
 st.caption("Created by **Roshan** | Data Science Portfolio Project 🚀")
