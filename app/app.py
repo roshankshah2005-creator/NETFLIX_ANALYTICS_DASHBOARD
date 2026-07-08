@@ -1,7 +1,6 @@
 import os
 import streamlit as st
 import pandas as pd
-<<<<<<< HEAD
 import matplotlib.pyplot as plt
 #---------------Title-------------------
 st.title("🎬 Netflix Analytics Dashboard")
