@@ -19,7 +19,7 @@ An interactive **Netflix Analytics Dashboard** built using **Python, Pandas, Plo
 
 ### Dataset Explorer
 
-![Dataset](images/Dataset explorer.png)
+![Charts](images/Dataset explorer.png)
 
 ### About
 
