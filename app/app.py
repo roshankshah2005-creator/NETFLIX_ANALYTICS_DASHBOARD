@@ -131,7 +131,6 @@ header{
 
 </style>
 """, unsafe_allow_html=True)
-<<<<<<< HEAD
 #--------------Image--------------------------
 st.image("images/N.webp", width=200)
 #-------------Description-------------------
