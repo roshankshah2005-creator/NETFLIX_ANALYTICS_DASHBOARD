@@ -269,8 +269,8 @@ Through this project, I gained hands-on experience with:
 ---
 
 # 👨‍💻 Author
-**Roshan Kumar Sah**
-Chemical Engineering Undergraduate
+**Roshan Kumar Sah**\n
+Chemical Engineering Undergraduate\n
 Aspiring Data Scientist | Machine Learning Enthusiast
 
 ---
