@@ -4,4 +4,7 @@ numpy
 matplotlib
 plotly
 seaborn
+<<<<<<< HEAD
 Pillow
+=======
+>>>>>>> b01c9b91f5adcb89cc202a145af83d9b7a626a08
