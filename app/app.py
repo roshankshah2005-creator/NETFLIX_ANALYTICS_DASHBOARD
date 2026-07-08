@@ -164,8 +164,6 @@ rating = st.sidebar.multiselect(
     default=sorted(netflix["rating"].dropna().unique())
 )
 years = sorted(netflix["release_year"].unique())
-=======
-
 #-------------------Dataset Loader--------------------
 @st.cache_data
 def load_data():
